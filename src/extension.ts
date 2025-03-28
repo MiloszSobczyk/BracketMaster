@@ -117,7 +117,8 @@ function compareRanges(a: vscode.Range, b: vscode.Range): number {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    const disposable = vscode.commands.registerCommand('extension.selectEnclosing', () => {
+    // Main command implementation
+    const selectEnclosingCommand = vscode.commands.registerCommand('extension.selectEnclosing', () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) return;
 
@@ -133,22 +134,54 @@ export function activate(context: vscode.ExtensionContext) {
             if (tagRange) candidates.push(tagRange);
             if (bracketRange) candidates.push(bracketRange);
 
-            // Select the most specific (innermost) range
             const bestRange = candidates
                 .filter(r => r.contains(position))
                 .sort(compareRanges)[0];
 
-            if (bestRange) {
-                newSelections.push(new vscode.Selection(bestRange.start, bestRange.end));
-            } else {
-                newSelections.push(selection);
-            }
+            newSelections.push(bestRange 
+                ? new vscode.Selection(bestRange.start, bestRange.end)
+                : selection
+            );
         });
 
         editor.selections = newSelections;
     });
 
-    context.subscriptions.push(disposable);
+    context.subscriptions.push(selectEnclosingCommand);
+
+    // Keybinding configuration management
+    let keybindingDisposable: vscode.Disposable | null = null;
+    
+    const updateKeybinding = () => {
+        const config = vscode.workspace.getConfiguration('bracketTagSelector');
+        const keybinding = config.get<string>('shortcut', 'ctrl+[');
+
+        // Clean up previous binding
+        if (keybindingDisposable) {
+            keybindingDisposable.dispose();
+        }
+
+        // Register new keybinding using input rules
+        keybindingDisposable = vscode.commands.registerCommand(
+            `bracketTagSelector.${keybinding}`,
+            () => vscode.commands.executeCommand('extension.selectEnclosing')
+        );
+
+        context.subscriptions.push(keybindingDisposable);
+    };
+
+    // Initial setup
+    updateKeybinding();
+
+    // Watch for configuration changes
+    context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration('bracketTagSelector.shortcut')) {
+            updateKeybinding();
+            vscode.window.showInformationMessage(
+                'Bracket/Tag selector shortcut updated. Restart VS Code to fully apply changes.'
+            );
+        }
+    }));
 }
 
 export function deactivate() {}
