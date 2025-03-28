@@ -1,0 +1,34 @@
+{
+	"name": "bracketmaster",
+	"displayName": "BracketMaster",
+	"description": "Select text between matching XML tags or brackets",
+	"version": "0.0.3",
+	"publisher": "your-publisher-name",
+	"engines": {
+		"vscode": "^1.98.0"
+	},
+	"main": "./out/extension.js",
+  "contributes": {
+    "commands": [{
+        "command": "extension.selectEnclosing",
+        "title": "Select Enclosing Brackets/Tags"
+    }],
+    "keybindings": [{
+        "command": "extension.selectEnclosing",
+        "key": "ctrl+[",
+        "when": "editorTextFocus"
+    }]
+  },
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"pretest": "npm run compile && npm run lint"
+	},
+	"devDependencies": {
+		"typescript": "^4.0.0",
+		"vscode": "^1.1.37",
+		"@types/node": "^10.0.0",
+		"@types/mocha": "^2.2.42"
+	}
+}
